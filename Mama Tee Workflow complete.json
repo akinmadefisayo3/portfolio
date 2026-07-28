@@ -1,0 +1,1327 @@
+{
+  "name": "Mama Tee Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mama-tee-kitchen",
+        "options": {
+          "responseCode": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        832
+      ],
+      "id": "5ca5c1f3-0220-435b-96d0-e87b07b6c13b",
+      "name": "Webhook",
+      "webhookId": "2b7c7e61-9b31-4688-8ea5-ab67730b0a2a",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message.artifact.messages }}",
+        "options": {
+          "systemMessage": "=Read the following call transcript and metadata from a restaurant voice assistant and extract these fields as JSON.\nIf a field does not apply to this call type, return an empty string.\n\nFields to extract:\n- call_id: extract from metadata below\n- timestamp: extract from metadata below\n- duration_secs: extract from metadata below\n- call_cost: extract from metadata below\n- ended_reason: extract from metadata below\n- recording_url: extract from metadata below\n- record_type: one of \"order\", \"reservation\", or \"escalation\"\n- customer_name\n- customer_phone: convert all spoken words to digits e.g. \"zero eight one zero eight nine three eight one seven two\" = \"08108938172\". Never leave empty if a number was spoken anywhere.\n- order_type: \"delivery\" or \"pickup\". Only for orders. Empty otherwise.\n- delivery_area: neighbourhood for delivery. Empty if pickup or not an order.\n- delivery_fee: number in naira. 500 for Wuse 2/Maitama/Asokoro/Central Area. 800 for Garki/Utako/Jabi/Wuse 1. 1200 for Gwarinpa/Lugbe/Kubwa/Karu/Nyanya. 0 if pickup. Empty if not an order.\n- order_items: comma-separated list of all items ordered including size and protein. Empty if not an order.\n- order_total: subtotal in naira excluding delivery fee. Empty if not an order.\n- grand_total: order_total plus delivery_fee. Empty if not an order.\n- pickup_time: time for collection, convert casual speech e.g. \"five PM\" = \"5:00 PM\". Empty if delivery or not an order.\n- payment_method: \"transfer\" or \"cash\". Empty if not an order.\n- special_instructions: customisation requests e.g. extra pepper, no onions. Empty if not an order.\n- party_size: number of guests, must be 5 or more. Only for reservations. Empty otherwise.\n- reservation_date: date in YYYY-MM-DD format. Only for reservations. Empty otherwise.\n- reservation_time: arrival time e.g. \"1:00 PM\". Only for reservations. Empty otherwise.\n- deposit_status: always \"pending\" if reservation was taken. Empty otherwise.\n- special_requests: extra notes for reservation e.g. occasion, dietary needs. Only for reservations. Empty otherwise.\n- escalation_reason: \"unanswered_question\" or \"complaint\". Only for escalations. Empty otherwise.\n- caller_request: what the caller asked or complained about in one sentence. Only for escalations. Empty otherwise.\n- agent_note: why Teni could not resolve the issue. Only for escalations. Empty otherwise.\n- resolved: false if this is an escalation. Empty otherwise.\n- status: \"new\" for orders, \"pending_deposit\" for reservations, \"needs_callback\" for escalations.\n- agent_summary: one sentence summary of the entire call regardless of type.\n\nRules:\n1. Never leave customer_phone empty if a number was spoken anywhere in the transcript.\n2. Never leave order_type empty if the caller mentioned delivery or pickup.\n3. Never leave pickup_time empty if a time was mentioned for collection.\n4. Convert ALL spoken numbers to digits.\n5. Extract call_id, timestamp, duration_secs, call_cost, ended_reason and recording_url strictly from the metadata — do not guess.\n6. Return ONLY valid JSON with exactly these 30 keys. No explanation, no markdown, no backticks.\n\nMetadata:\ncall_id: {{ $json.body.message.call.id }}\ntimestamp: {{ $json.body.message.startedAt }}\nduration_secs: {{ $json.body.message.durationSeconds }}\ncall_cost: {{ $json.body.message.cost }}\nended_reason: {{ $json.body.message.endedReason }}\nrecording_url: {{ $json.body.message.artifact.recordingUrl }}\n\nTranscript:\n{{ $json.body.message.artifact.transcript }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -768,
+        832
+      ],
+      "id": "d4fc173d-5e3f-49a0-a876-b103a11ec34b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -912,
+        1056
+      ],
+      "id": "485b3924-c583-4d8e-a421-a99c06363866",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Wmdvxk4edbbzeS8D",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Code in JavaScript').item.json.record_type }}",
+                    "rightValue": "order",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5ffa5020-87ff-4769-960b-692eef133bec"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ac1753ec-4bc0-4c59-90ee-697e0d8152d4",
+                    "leftValue": "={{ $('Code in JavaScript').item.json.record_type }}",
+                    "rightValue": "reservation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reservation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c8dbe9b7-8807-4947-8aa7-e6c5762d5a47",
+                    "leftValue": "={{ $('Code in JavaScript').item.json.record_type }}",
+                    "rightValue": "escalation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "escalation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bda98c24-aea4-4e41-abab-b7b4e8319085",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unclassified"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        800
+      ],
+      "id": "3dae245b-12f4-4e2a-b044-f4d029b76b24",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output;\nconst parsed = JSON.parse(raw);\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        832
+      ],
+      "id": "c3fd30ca-a716-486b-af87-ef1e875359eb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU",
+          "mode": "list",
+          "cachedResultName": "Mama Tee's Kitchen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Call ID": "={{ $('Code in JavaScript').item.json.call_id }}",
+            "Timestamp": "={{ $('Code in JavaScript').item.json.timestamp }}",
+            "Duration (secs)": "={{ $('Code in JavaScript').item.json.duration_secs }}",
+            "Call Cost $": "={{ $('Code in JavaScript').item.json.call_cost }}",
+            "Ended Reason": "={{ $('Code in JavaScript').item.json.ended_reason }}",
+            "Recording URL": "={{ $('Code in JavaScript').item.json.recording_url }}",
+            "Record Type": "={{ $('Code in JavaScript').item.json.record_type }}",
+            "Customer Name": "={{ $('Code in JavaScript').item.json.customer_name }}",
+            "Coustomer Phone": "={{ $('Code in JavaScript').item.json.customer_phone }}",
+            "Order Type": "={{ $('Code in JavaScript').item.json.order_type }}",
+            "Delivery Area": "={{ $('Code in JavaScript').item.json.delivery_area }}",
+            "Delivery Fee": "={{ $('Code in JavaScript').item.json.delivery_fee }}",
+            "Order Items": "={{ $('Code in JavaScript').item.json.order_items }}",
+            "Order Total": "={{ $('Code in JavaScript').item.json.order_total }}",
+            "Grand Total": "={{ $('Code in JavaScript').item.json.grand_total }}",
+            "Pickup Time": "={{ $('Code in JavaScript').item.json.pickup_time }}",
+            "Payment Method": "={{ $('Code in JavaScript').item.json.payment_method }}",
+            "Special Instructions": "={{ $('Code in JavaScript').item.json.special_instructions }}",
+            "Status": "={{ $('Code in JavaScript').item.json.status }}",
+            "Agent Summary": "={{ $('Code in JavaScript').item.json.agent_summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Call ID",
+              "displayName": "Call ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration (secs)",
+              "displayName": "Duration (secs)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Call Cost $",
+              "displayName": "Call Cost $",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ended Reason",
+              "displayName": "Ended Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recording URL",
+              "displayName": "Recording URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Record Type",
+              "displayName": "Record Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coustomer Phone",
+              "displayName": "Coustomer Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order Type",
+              "displayName": "Order Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivery Area",
+              "displayName": "Delivery Area",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delivery Fee",
+              "displayName": "Delivery Fee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order Items",
+              "displayName": "Order Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order Total",
+              "displayName": "Order Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Grand Total",
+              "displayName": "Grand Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pickup Time",
+              "displayName": "Pickup Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Payment Method",
+              "displayName": "Payment Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Special Instructions",
+              "displayName": "Special Instructions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Summary",
+              "displayName": "Agent Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        64
+      ],
+      "id": "521a5951-09ba-45ab-afde-e54e5f41ef53",
+      "name": "Order Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cFKuZzFRxbo2OVFS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU",
+          "mode": "list",
+          "cachedResultName": "Mama Tee's Kitchen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 323680417,
+          "mode": "list",
+          "cachedResultName": "Reservation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit#gid=323680417"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Call ID": "={{ $('Code in JavaScript').item.json.call_id }}",
+            "Timestamp": "={{ $('Code in JavaScript').item.json.timestamp }}",
+            "Duration (secs)": "={{ $('Code in JavaScript').item.json.duration_secs }}",
+            "Call Cost $": "={{ $('Code in JavaScript').item.json.call_cost }}",
+            "Ended Reason": "={{ $('Code in JavaScript').item.json.ended_reason }}",
+            "Recording URL": "={{ $('Code in JavaScript').item.json.recording_url }}",
+            "Record Type": "={{ $('Code in JavaScript').item.json.record_type }}",
+            "Customer Name": "={{ $('Code in JavaScript').item.json.customer_name }}",
+            "Coustomer Phone": "={{ $('Code in JavaScript').item.json.customer_phone }}",
+            "Party Size": "={{ $('Code in JavaScript').item.json.party_size }}",
+            "Reservation Time": "={{ $('Code in JavaScript').item.json.reservation_time }}",
+            "Reservation Date": "={{ $('Code in JavaScript').item.json.reservation_date }}",
+            "Deposit Status": "={{ $('Code in JavaScript').item.json.deposit_status }}",
+            "Status": "={{ $('Code in JavaScript').item.json.status }}",
+            "Special Requests": "={{ $('Code in JavaScript').item.json.special_requests }}",
+            "Agent Summary": "={{ $('Code in JavaScript').item.json.agent_summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Call ID",
+              "displayName": "Call ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration (secs)",
+              "displayName": "Duration (secs)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Call Cost $",
+              "displayName": "Call Cost $",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ended Reason",
+              "displayName": "Ended Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recording URL",
+              "displayName": "Recording URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Record Type",
+              "displayName": "Record Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coustomer Phone",
+              "displayName": "Coustomer Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Party Size",
+              "displayName": "Party Size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reservation Date",
+              "displayName": "Reservation Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reservation Time",
+              "displayName": "Reservation Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Deposit Status",
+              "displayName": "Deposit Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Special Requests",
+              "displayName": "Special Requests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Summary",
+              "displayName": "Agent Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        640
+      ],
+      "id": "f31c8da3-597c-4388-b850-7b70ab257290",
+      "name": "Reservation Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cFKuZzFRxbo2OVFS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU",
+          "mode": "list",
+          "cachedResultName": "Mama Tee's Kitchen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 222353166,
+          "mode": "list",
+          "cachedResultName": "Escalation",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dxvIjiyrdg1_xU6MXKQN9-G-sB0Ij-6AIkbaQOXWjRU/edit#gid=222353166"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Call ID": "={{ $('Code in JavaScript').item.json.call_id }}",
+            "Timestamp": "={{ $('Code in JavaScript').item.json.timestamp }}",
+            "Duration (secs)": "={{ $('Code in JavaScript').item.json.duration_secs }}",
+            "Call Cost $": "={{ $('Code in JavaScript').item.json.call_cost }}",
+            "Ended Reason": "={{ $('Code in JavaScript').item.json.ended_reason }}",
+            "Recording URL": "={{ $('Code in JavaScript').item.json.recording_url }}",
+            "Record Type": "={{ $('Code in JavaScript').item.json.record_type }}",
+            "Customer Name": "={{ $('Code in JavaScript').item.json.customer_name }}",
+            "Coustomer Phone": "={{ $('Code in JavaScript').item.json.customer_phone }}",
+            "Escalation Reason": "={{ $('Code in JavaScript').item.json.escalation_reason }}",
+            "Caller Request": "={{ $('Code in JavaScript').item.json.caller_request }}",
+            "Agent Note": "={{ $('Code in JavaScript').item.json.agent_note }}",
+            "Status": "={{ $('Code in JavaScript').item.json.status }}",
+            "Agent Summary": "={{ $('Code in JavaScript').item.json.agent_summary }}",
+            "Resolved": "={{ $('Code in JavaScript').item.json.resolved }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Call ID",
+              "displayName": "Call ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Duration (secs)",
+              "displayName": "Duration (secs)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Call Cost $",
+              "displayName": "Call Cost $",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ended Reason",
+              "displayName": "Ended Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recording URL",
+              "displayName": "Recording URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Record Type",
+              "displayName": "Record Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Coustomer Phone",
+              "displayName": "Coustomer Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Escalation Reason",
+              "displayName": "Escalation Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caller Request",
+              "displayName": "Caller Request",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Note",
+              "displayName": "Agent Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resolved",
+              "displayName": "Resolved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent Summary",
+              "displayName": "Agent Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        1216
+      ],
+      "id": "efed0a82-9712-4317-8b55-0f483b7faa65",
+      "name": "Escalation Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cFKuZzFRxbo2OVFS",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6802b9f1-dcff-43ee-a69c-d62950017429",
+              "name": "Date",
+              "value": "={{ new Date($json.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) }}",
+              "type": "string"
+            },
+            {
+              "id": "b4a9b6da-e194-4760-8049-e593bb2cf448",
+              "name": "Time",
+              "value": "={{ new Date($json.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        832
+      ],
+      "id": "5651b649-f7da-4244-b731-c804417b1af9",
+      "name": "Data formating"
+    },
+    {
+      "parameters": {
+        "sendTo": "akinmadefisayo41@gmail.com",
+        "subject": "The AI Agent Has Escalated An Issue",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>Escalation Alert — Mama Tee's Kitchen</title>\n  <style>\n    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');\n\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n\n    body {\n      background-color: #f5efe6;\n      font-family: 'DM Sans', sans-serif;\n      color: #1a1a1a;\n      padding: 32px 16px;\n    }\n\n    .wrapper {\n      max-width: 600px;\n      margin: 0 auto;\n    }\n\n    /* ── Header ── */\n    .header {\n      background-color: #7b2d00;\n      border-radius: 16px 16px 0 0;\n      padding: 36px 40px 28px;\n      text-align: center;\n      position: relative;\n      overflow: hidden;\n    }\n\n    .header::before {\n      content: '';\n      position: absolute;\n      top: -40px; right: -40px;\n      width: 180px; height: 180px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.05);\n    }\n\n    .header::after {\n      content: '';\n      position: absolute;\n      bottom: -60px; left: -30px;\n      width: 220px; height: 220px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.04);\n    }\n\n    .header-badge {\n      display: inline-block;\n      background: #ffe0d0;\n      color: #7b2d00;\n      font-family: 'DM Sans', sans-serif;\n      font-weight: 600;\n      font-size: 11px;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      padding: 5px 14px;\n      border-radius: 20px;\n      margin-bottom: 14px;\n    }\n\n    .header h1 {\n      font-family: 'Playfair Display', serif;\n      font-weight: 900;\n      font-size: 30px;\n      color: #fff;\n      line-height: 1.2;\n      position: relative;\n      z-index: 1;\n    }\n\n    .header h1 span {\n      color: #f9c74f;\n    }\n\n    .header-sub {\n      color: rgba(255,255,255,0.75);\n      font-size: 13.5px;\n      margin-top: 6px;\n      position: relative;\n      z-index: 1;\n    }\n\n    /* ── Alert banner ── */\n    .alert-bar {\n      background: #f9c74f;\n      padding: 12px 40px;\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n\n    .alert-bar .icon { font-size: 18px; }\n\n    .alert-bar p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #1a1a1a;\n    }\n\n    .alert-bar p span {\n      font-weight: 400;\n      color: #4a4a4a;\n    }\n\n    /* ── Urgency strip ── */\n    .urgency-strip {\n      background: #fff0e8;\n      border-left: 5px solid #7b2d00;\n      padding: 14px 24px;\n      display: flex;\n      align-items: center;\n      gap: 12px;\n    }\n\n    .urgency-strip .u-icon {\n      font-size: 22px;\n      flex-shrink: 0;\n    }\n\n    .urgency-strip p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #7b2d00;\n      line-height: 1.5;\n    }\n\n    .urgency-strip p span {\n      font-weight: 400;\n      color: #6a4030;\n    }\n\n    /* ── Body card ── */\n    .card {\n      background: #ffffff;\n      padding: 36px 40px;\n    }\n\n    /* ── Section title ── */\n    .section-title {\n      font-size: 10.5px;\n      font-weight: 600;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      color: #7b2d00;\n      margin-bottom: 12px;\n    }\n\n    /* ── Info grid ── */\n    .info-grid {\n      display: table;\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 28px;\n    }\n\n    .info-row { display: table-row; }\n\n    .info-label {\n      display: table-cell;\n      font-size: 13px;\n      color: #888;\n      font-weight: 500;\n      padding: 7px 0;\n      width: 38%;\n      vertical-align: top;\n    }\n\n    .info-value {\n      display: table-cell;\n      font-size: 14px;\n      font-weight: 600;\n      color: #1a1a1a;\n      padding: 7px 0;\n      vertical-align: top;\n    }\n\n    .divider {\n      border: none;\n      border-top: 1.5px solid #f0e8dc;\n      margin: 24px 0;\n    }\n\n    /* ── Reason card ── */\n    .reason-card {\n      background: #fff8f5;\n      border: 1.5px solid #f5cdb8;\n      border-radius: 12px;\n      padding: 22px 24px;\n      margin-bottom: 28px;\n    }\n\n    .reason-card .r-label {\n      font-size: 10px;\n      font-weight: 600;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #7b2d00;\n      margin-bottom: 10px;\n    }\n\n    .reason-card .r-text {\n      font-size: 14.5px;\n      color: #2a2a2a;\n      line-height: 1.7;\n      font-style: italic;\n    }\n\n    .reason-card .r-text::before {\n      content: '\"';\n      font-family: 'Playfair Display', serif;\n      font-size: 28px;\n      color: #f5cdb8;\n      line-height: 0;\n      vertical-align: -10px;\n      margin-right: 4px;\n    }\n\n    .reason-card .r-text::after {\n      content: '\"';\n      font-family: 'Playfair Display', serif;\n      font-size: 28px;\n      color: #f5cdb8;\n      line-height: 0;\n      vertical-align: -10px;\n      margin-left: 4px;\n    }\n\n    /* ── Call summary box ── */\n    .summary-box {\n      background: #f9f9f9;\n      border-radius: 10px;\n      padding: 18px 22px;\n      margin-bottom: 4px;\n      font-size: 13.5px;\n      color: #4a4a4a;\n      line-height: 1.75;\n    }\n\n    .summary-box .s-label {\n      font-size: 10px;\n      font-weight: 600;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #888;\n      margin-bottom: 8px;\n    }\n\n    /* ── Action checklist ── */\n    .action-box {\n      margin-top: 24px;\n      border: 1.5px dashed #f5cdb8;\n      border-radius: 10px;\n      padding: 16px 20px;\n      font-size: 13px;\n      color: #4a4a4a;\n      line-height: 1.7;\n    }\n\n    .action-box strong {\n      display: block;\n      font-size: 10.5px;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #7b2d00;\n      margin-bottom: 8px;\n    }\n\n    .action-box ul {\n      padding-left: 18px;\n    }\n\n    .action-box ul li {\n      margin-bottom: 4px;\n    }\n\n    /* ── Callback highlight ── */\n    .callback-strip {\n      background: #7b2d00;\n      border-radius: 10px;\n      padding: 18px 22px;\n      margin-top: 24px;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      gap: 12px;\n    }\n\n    .callback-strip .cb-left .cb-label {\n      font-size: 11px;\n      color: rgba(255,255,255,0.6);\n      font-weight: 500;\n      margin-bottom: 4px;\n    }\n\n    .callback-strip .cb-left .cb-number {\n      font-family: 'Playfair Display', serif;\n      font-size: 20px;\n      font-weight: 700;\n      color: #f9c74f;\n      letter-spacing: 1px;\n    }\n\n    .callback-strip .cb-right {\n      font-size: 12px;\n      font-weight: 600;\n      color: rgba(255,255,255,0.85);\n      text-align: right;\n      line-height: 1.6;\n    }\n\n    /* ── Footer ── */\n    .footer {\n      background: #1a1a1a;\n      border-radius: 0 0 16px 16px;\n      padding: 24px 40px;\n      text-align: center;\n    }\n\n    .footer p {\n      color: #888;\n      font-size: 12px;\n      line-height: 1.8;\n    }\n\n    .footer p strong {\n      color: #f9c74f;\n      font-weight: 600;\n    }\n\n    .footer .social {\n      margin-top: 10px;\n      font-size: 12px;\n      color: #666;\n    }\n\n    .footer .social a {\n      color: #f9c74f;\n      text-decoration: none;\n    }\n\n    /* ── Responsive ── */\n    @media (max-width: 480px) {\n      .card { padding: 28px 24px; }\n      .header { padding: 28px 24px 22px; }\n      .alert-bar { padding: 12px 24px; }\n      .footer { padding: 22px 24px; }\n      .header h1 { font-size: 24px; }\n      .callback-strip { flex-direction: column; align-items: flex-start; }\n      .callback-strip .cb-right { text-align: left; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <!-- Header -->\n    <div class=\"header\">\n      <div class=\"header-badge\">🚨 Escalation Alert</div>\n      <h1>Mama Tee's <span>Kitchen</span></h1>\n      <p class=\"header-sub\">Escalation notification — via Teni Voice Assistant</p>\n    </div>\n\n    <!-- Alert bar -->\n    <div class=\"alert-bar\">\n      <span class=\"icon\">⏰</span>\n      <p>\n        Received: <span>{{ $('Data formating').item.json.Date }} at {{ $('Data formating').item.json.Time }}</span>\n      </p>\n    </div>\n\n    <!-- Urgency strip -->\n    <div class=\"urgency-strip\">\n      <span class=\"u-icon\">⚠️</span>\n      <p>\n        A caller could not be helped by Teni and requires a human callback. <span>Please respond as soon as possible.</span>\n      </p>\n    </div>\n\n    <!-- Main card -->\n    <div class=\"card\">\n\n      <!-- Caller Details -->\n      <p class=\"section-title\">Caller Details</p>\n      <div class=\"info-grid\">\n        <div class=\"info-row\">\n          <span class=\"info-label\">Full Name</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_name }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Phone Number</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_phone }}</span>\n        </div>\n        <div class=\"info-row\">\n          \n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\"</span>\n          <span class=\"info-value\"></span>\n        </div>\n      </div>\n\n      <hr class=\"divider\" />\n\n      <!-- Escalation Reason -->\n      <p class=\"section-title\">What the Caller Said</p>\n      <div class=\"reason-card\">\n        <div class=\"r-label\">📞 Caller's Message</div>\n        <p class=\"r-text\">{{ $('Code in JavaScript').item.json.escalation_reason }}</p>\n      </div>\n\n      <!-- Call Summary -->\n      <p class=\"section-title\">Call Summary</p>\n      <div class=\"summary-box\">\n        <div class=\"s-label\">🤖 Teni's Summary</div>\n        {{ $('Code in JavaScript').item.json.agent_summary }}\n      </div>\n\n      <!-- Callback highlight -->\n      <div class=\"callback-strip\">\n        <div class=\"cb-left\">\n          <div class=\"cb-label\">Call back this number</div>\n          <div class=\"cb-number\">{{ $('Code in JavaScript').item.json.customer_phone }}</div>\n        </div>\n        <div class=\"cb-right\">\n          Teni has informed the caller<br />\n          that a team member will<br />\n          be in touch shortly.\n        </div>\n      </div>\n\n      <!-- Action checklist -->\n      <div class=\"action-box\">\n        <strong>✅ Action Required</strong>\n        <ul>\n          <li>Call back {{ $('Code in JavaScript').item.json.customer_name }} as soon as possible</li>\n          <li>Review Teni's call summary above before calling</li>\n          <li>Resolve the caller's concern and log the outcome</li>\n          <li>If it is a complaint, escalate to the manager on duty</li>\n        </ul>\n      </div>\n\n    </div><!-- /card -->\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p>\n        This escalation was flagged by <strong>Teni</strong>, Mama Tee's Kitchen virtual voice assistant.<br />\n        14 Adetokunbo Ademola Crescent, Wuse 2, Abuja &nbsp;·&nbsp; 0812 345 6789\n      </p>\n      <p class=\"social\">\n        Instagram: <a href=\"https://instagram.com/mamateeskitchen\">@mamateeskitchen</a>\n      </p>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        1216
+      ],
+      "id": "8e1204de-f6b3-42b5-be52-809d074da520",
+      "name": "Send escalation details to email",
+      "webhookId": "8e8e09ee-c25a-4ff3-b2a1-ce0bd8db5f41",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m2H5CgJRllemH4yc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "akinmadefisayo41@gmail.com",
+        "subject": "=A Reservation From {{ $('Code in JavaScript').item.json.customer_name }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>New Reservation — Mama Tee's Kitchen</title>\n  <style>\n    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');\n\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n\n    body {\n      background-color: #f5efe6;\n      font-family: 'DM Sans', sans-serif;\n      color: #1a1a1a;\n      padding: 32px 16px;\n    }\n\n    .wrapper {\n      max-width: 600px;\n      margin: 0 auto;\n    }\n\n    /* ── Header ── */\n    .header {\n      background-color: #1a6b3a;\n      border-radius: 16px 16px 0 0;\n      padding: 36px 40px 28px;\n      text-align: center;\n      position: relative;\n      overflow: hidden;\n    }\n\n    .header::before {\n      content: '';\n      position: absolute;\n      top: -40px; right: -40px;\n      width: 180px; height: 180px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.05);\n    }\n\n    .header::after {\n      content: '';\n      position: absolute;\n      bottom: -60px; left: -30px;\n      width: 220px; height: 220px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.04);\n    }\n\n    .header-badge {\n      display: inline-block;\n      background: #f5efe6;\n      color: #1a6b3a;\n      font-family: 'DM Sans', sans-serif;\n      font-weight: 600;\n      font-size: 11px;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      padding: 5px 14px;\n      border-radius: 20px;\n      margin-bottom: 14px;\n    }\n\n    .header h1 {\n      font-family: 'Playfair Display', serif;\n      font-weight: 900;\n      font-size: 30px;\n      color: #fff;\n      line-height: 1.2;\n      position: relative;\n      z-index: 1;\n    }\n\n    .header h1 span {\n      color: #f9c74f;\n    }\n\n    .header-sub {\n      color: rgba(255,255,255,0.75);\n      font-size: 13.5px;\n      margin-top: 6px;\n      position: relative;\n      z-index: 1;\n    }\n\n    /* ── Alert banner ── */\n    .alert-bar {\n      background: #f9c74f;\n      padding: 12px 40px;\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n\n    .alert-bar .icon { font-size: 18px; }\n\n    .alert-bar p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #1a1a1a;\n    }\n\n    .alert-bar p span {\n      font-weight: 400;\n      color: #4a4a4a;\n    }\n\n    /* ── Body card ── */\n    .card {\n      background: #ffffff;\n      padding: 36px 40px;\n    }\n\n    /* ── Section title ── */\n    .section-title {\n      font-size: 10.5px;\n      font-weight: 600;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      color: #1a6b3a;\n      margin-bottom: 12px;\n    }\n\n    /* ── Info grid ── */\n    .info-grid {\n      display: table;\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 28px;\n    }\n\n    .info-row {\n      display: table-row;\n    }\n\n    .info-label {\n      display: table-cell;\n      font-size: 13px;\n      color: #888;\n      font-weight: 500;\n      padding: 7px 0;\n      width: 38%;\n      vertical-align: top;\n    }\n\n    .info-value {\n      display: table-cell;\n      font-size: 14px;\n      font-weight: 600;\n      color: #1a1a1a;\n      padding: 7px 0;\n      vertical-align: top;\n    }\n\n    .divider {\n      border: none;\n      border-top: 1.5px solid #f0e8dc;\n      margin: 24px 0;\n    }\n\n    /* ── Reservation highlight card ── */\n    .booking-card {\n      background: #f0f7f3;\n      border: 1.5px solid #b8ddc8;\n      border-radius: 12px;\n      padding: 24px 28px;\n      margin-bottom: 28px;\n      display: flex;\n      gap: 0;\n      flex-wrap: wrap;\n    }\n\n    .booking-block {\n      flex: 1;\n      min-width: 120px;\n      padding: 0 16px;\n      border-right: 1.5px solid #c8e6d4;\n      text-align: center;\n    }\n\n    .booking-block:first-child {\n      padding-left: 0;\n    }\n\n    .booking-block:last-child {\n      border-right: none;\n    }\n\n    .booking-block .b-label {\n      font-size: 10px;\n      font-weight: 600;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #1a6b3a;\n      margin-bottom: 6px;\n    }\n\n    .booking-block .b-value {\n      font-family: 'Playfair Display', serif;\n      font-size: 20px;\n      font-weight: 700;\n      color: #1a1a1a;\n      line-height: 1.2;\n    }\n\n    .booking-block .b-sub {\n      font-size: 11.5px;\n      color: #888;\n      margin-top: 3px;\n    }\n\n    /* ── Party size badge ── */\n    .party-badge {\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n      background: #1a6b3a;\n      color: #fff;\n      font-size: 13px;\n      font-weight: 600;\n      padding: 4px 14px;\n      border-radius: 20px;\n    }\n\n    /* ── Deposit strip ── */\n    .deposit-strip {\n      background: #f5efe6;\n      border-radius: 10px;\n      padding: 16px 20px;\n      margin-top: 4px;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n    }\n\n    .deposit-strip .dep-label {\n      font-size: 12px;\n      color: #888;\n      font-weight: 500;\n    }\n\n    .deposit-strip .dep-amount {\n      font-family: 'Playfair Display', serif;\n      font-size: 20px;\n      font-weight: 700;\n      color: #b5451b;\n    }\n\n    .dep-status {\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n      font-size: 13px;\n      font-weight: 600;\n    }\n\n    .dot {\n      width: 8px; height: 8px;\n      border-radius: 50%;\n      display: inline-block;\n    }\n\n    .dot-pending { background: #f9c74f; }\n    .dot-paid    { background: #4caf50; }\n\n    /* ── Notes box ── */\n    .notes-box {\n      background: #fff8f0;\n      border-left: 4px solid #f9c74f;\n      border-radius: 0 8px 8px 0;\n      padding: 14px 18px;\n      margin-top: 28px;\n      font-size: 13.5px;\n      color: #4a4a4a;\n      line-height: 1.6;\n    }\n\n    .notes-box strong {\n      display: block;\n      font-size: 11px;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #b5451b;\n      margin-bottom: 5px;\n    }\n\n    /* ── Action reminder ── */\n    .action-box {\n      margin-top: 24px;\n      border: 1.5px dashed #b8ddc8;\n      border-radius: 10px;\n      padding: 16px 20px;\n      font-size: 13px;\n      color: #4a4a4a;\n      line-height: 1.7;\n    }\n\n    .action-box strong {\n      display: block;\n      font-size: 10.5px;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #1a6b3a;\n      margin-bottom: 6px;\n    }\n\n    .action-box ul {\n      padding-left: 18px;\n    }\n\n    .action-box ul li {\n      margin-bottom: 3px;\n    }\n\n    /* ── Footer ── */\n    .footer {\n      background: #1a1a1a;\n      border-radius: 0 0 16px 16px;\n      padding: 24px 40px;\n      text-align: center;\n    }\n\n    .footer p {\n      color: #888;\n      font-size: 12px;\n      line-height: 1.8;\n    }\n\n    .footer p strong {\n      color: #f9c74f;\n      font-weight: 600;\n    }\n\n    .footer .social {\n      margin-top: 10px;\n      font-size: 12px;\n      color: #666;\n    }\n\n    .footer .social a {\n      color: #f9c74f;\n      text-decoration: none;\n    }\n\n    /* ── Responsive ── */\n    @media (max-width: 480px) {\n      .card { padding: 28px 24px; }\n      .header { padding: 28px 24px 22px; }\n      .alert-bar { padding: 12px 24px; }\n      .footer { padding: 22px 24px; }\n      .header h1 { font-size: 24px; }\n      .booking-card { flex-direction: column; gap: 16px; }\n      .booking-block { border-right: none; border-bottom: 1.5px solid #c8e6d4; padding: 0 0 16px; text-align: left; }\n      .booking-block:last-child { border-bottom: none; padding-bottom: 0; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <!-- Header -->\n    <div class=\"header\">\n      <div class=\"header-badge\">🪑 New Reservation Request</div>\n      <h1>Mama Tee's <span>Kitchen</span></h1>\n      <p class=\"header-sub\">Reservation notification — via Teni Voice Assistant</p>\n    </div>\n\n    <!-- Alert bar -->\n    <div class=\"alert-bar\">\n      <span class=\"icon\">⏰</span>\n      <p>\n        Received: <span>{{ $('Data formating').item.json.Date }} at {{ $('Data formating').item.json.Time }}</span>\n      </p>\n    </div>\n\n    <!-- Main card -->\n    <div class=\"card\">\n\n      <!-- Customer Details -->\n      <p class=\"section-title\">Guest Details</p>\n      <div class=\"info-grid\">\n        <div class=\"info-row\">\n          <span class=\"info-label\">Full Name</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_name }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Phone Number</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_phone }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Party Size</span>\n          <span class=\"info-value\">\n            <span class=\"party-badge\">👥 {{ $('Code in JavaScript').item.json.party_size }} Guests</span>\n          </span>\n        </div>\n      </div>\n\n      <hr class=\"divider\" />\n\n      <!-- Booking Details -->\n      <p class=\"section-title\">Booking Details</p>\n      <div class=\"booking-card\">\n        <div class=\"booking-block\">\n          <div class=\"b-label\">📅 Date</div>\n          <div class=\"b-value\">{{ $('Code in JavaScript').item.json.reservation_date }}</div>\n          <div class=\"b-sub\">Requested date</div>\n        </div>\n        <div class=\"booking-block\">\n          <div class=\"b-label\">🕐 Time</div>\n          <div class=\"b-value\">{{ $('Code in JavaScript').item.json.reservation_time }}</div>\n          <div class=\"b-sub\">Arrival time</div>\n        </div>\n        <div class=\"booking-block\">\n          <div class=\"b-label\">👥 Guests</div>\n          <div class=\"b-value\">{{ $('Code in JavaScript').item.json.party_size }}</div>\n          <div class=\"b-sub\">People</div>\n        </div>\n      </div>\n\n      <hr class=\"divider\" />\n\n      <!-- Deposit -->\n      <p class=\"section-title\">Deposit</p>\n      <div class=\"deposit-strip\">\n        <div>\n          <div class=\"dep-label\">Required Deposit</div>\n          <div class=\"dep-amount\">₦5,000</div>\n        </div>\n        <div>\n          <span class=\"dep-status\">\n            <span class=\"dot dot-pending\"></span>\n            Awaiting Payment\n          </span>\n          <!-- Paid version:\n          <span class=\"dep-status\">\n            <span class=\"dot dot-paid\"></span>\n            Deposit Confirmed\n          </span> -->\n        </div>\n      </div>\n\n      <!-- Special notes -->\n      <div class=\"notes-box\">\n        <strong>📝 Special Requests</strong>\n        {{ $('Code in JavaScript').item.json.special_requests }}\n      </div>\n\n      <!-- Action checklist for staff -->\n      <div class=\"action-box\">\n        <strong>✅ Action Required</strong>\n        <ul>\n          <li>Call or WhatsApp the guest to confirm the reservation</li>\n          <li>Collect the five thousand naira deposit before confirming</li>\n          <li>Ensure booking is at least 24 hours before the reserved date</li>\n          <li>Reserve seating for {{ $('Code in JavaScript').item.json.party_size }} guests indoors</li>\n        </ul>\n      </div>\n\n    </div><!-- /card -->\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p>\n        This reservation was captured by <strong>Teni</strong>, Mama Tee's Kitchen virtual voice assistant.<br />\n        14 Adetokunbo Ademola Crescent, Wuse 2, Abuja &nbsp;·&nbsp; 0812 345 6789\n      </p>\n      <p class=\"social\">\n        Instagram: <a href=\"https://instagram.com/mamateeskitchen\">@mamateeskitchen</a>\n      </p>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        640
+      ],
+      "id": "279daaa6-c923-4e01-af61-a13cd486d26b",
+      "name": "Send reservation details to email",
+      "webhookId": "2faef756-b10a-40fe-9f78-d6e2653e12de",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m2H5CgJRllemH4yc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "akinmadefisayo41@gmail.com",
+        "subject": "=Order Placement from {{ $('Code in JavaScript').item.json.customer_name }}",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>New Order — Mama Tee's Kitchen</title>\n  <style>\n    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');\n\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n\n    body {\n      background-color: #f5efe6;\n      font-family: 'DM Sans', sans-serif;\n      color: #1a1a1a;\n      padding: 32px 16px;\n    }\n\n    .wrapper {\n      max-width: 600px;\n      margin: 0 auto;\n    }\n\n    /* ── Header ── */\n    .header {\n      background-color: #b5451b;\n      border-radius: 16px 16px 0 0;\n      padding: 36px 40px 28px;\n      text-align: center;\n      position: relative;\n      overflow: hidden;\n    }\n\n    .header::before {\n      content: '';\n      position: absolute;\n      top: -40px; right: -40px;\n      width: 180px; height: 180px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.05);\n    }\n\n    .header::after {\n      content: '';\n      position: absolute;\n      bottom: -60px; left: -30px;\n      width: 220px; height: 220px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.04);\n    }\n\n    .header-badge {\n      display: inline-block;\n      background: #f5efe6;\n      color: #b5451b;\n      font-family: 'DM Sans', sans-serif;\n      font-weight: 600;\n      font-size: 11px;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      padding: 5px 14px;\n      border-radius: 20px;\n      margin-bottom: 14px;\n    }\n\n    .header h1 {\n      font-family: 'Playfair Display', serif;\n      font-weight: 900;\n      font-size: 30px;\n      color: #fff;\n      line-height: 1.2;\n      position: relative;\n      z-index: 1;\n    }\n\n    .header h1 span {\n      color: #f9c74f;\n    }\n\n    .header-sub {\n      color: rgba(255,255,255,0.75);\n      font-size: 13.5px;\n      margin-top: 6px;\n      position: relative;\n      z-index: 1;\n    }\n\n    /* ── Alert banner ── */\n    .alert-bar {\n      background: #f9c74f;\n      padding: 12px 40px;\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n\n    .alert-bar .icon { font-size: 18px; }\n\n    .alert-bar p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #1a1a1a;\n    }\n\n    .alert-bar p span {\n      font-weight: 400;\n      color: #4a4a4a;\n    }\n\n    /* ── Body card ── */\n    .card {\n      background: #ffffff;\n      padding: 36px 40px;\n    }\n\n    /* ── Section title ── */\n    .section-title {\n      font-size: 10.5px;\n      font-weight: 600;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      color: #b5451b;\n      margin-bottom: 12px;\n    }\n\n    /* ── Customer info ── */\n    .info-grid {\n      display: table;\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 28px;\n    }\n\n    .info-row {\n      display: table-row;\n    }\n\n    .info-label {\n      display: table-cell;\n      font-size: 13px;\n      color: #888;\n      font-weight: 500;\n      padding: 7px 0;\n      width: 38%;\n      vertical-align: top;\n    }\n\n    .info-value {\n      display: table-cell;\n      font-size: 14px;\n      font-weight: 600;\n      color: #1a1a1a;\n      padding: 7px 0;\n      vertical-align: top;\n    }\n\n    .badge-type {\n      display: inline-block;\n      padding: 3px 10px;\n      border-radius: 20px;\n      font-size: 12px;\n      font-weight: 600;\n    }\n\n    .badge-delivery {\n      background: #fff0e8;\n      color: #b5451b;\n    }\n\n    .badge-pickup {\n      background: #e8f5e9;\n      color: #2e7d32;\n    }\n\n    .divider {\n      border: none;\n      border-top: 1.5px solid #f0e8dc;\n      margin: 24px 0;\n    }\n\n    /* ── Order items ── */\n    .order-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 4px;\n    }\n\n    .order-table thead tr {\n      border-bottom: 1.5px solid #f0e8dc;\n    }\n\n    .order-table thead th {\n      font-size: 11px;\n      font-weight: 600;\n      letter-spacing: 1.8px;\n      text-transform: uppercase;\n      color: #aaa;\n      padding: 0 0 10px;\n      text-align: left;\n    }\n\n    .order-table thead th:last-child {\n      text-align: right;\n    }\n\n    .order-table tbody tr {\n      border-bottom: 1px solid #f7f2ec;\n    }\n\n    .order-table tbody tr:last-child {\n      border-bottom: none;\n    }\n\n    .order-table tbody td {\n      padding: 11px 0;\n      font-size: 14px;\n      color: #2a2a2a;\n      vertical-align: top;\n    }\n\n    .order-table tbody td.qty {\n      color: #b5451b;\n      font-weight: 700;\n      width: 32px;\n    }\n\n    .order-table tbody td.item-name {\n      font-weight: 500;\n    }\n\n    .order-table tbody td.item-note {\n      font-size: 12px;\n      color: #999;\n      font-style: italic;\n    }\n\n    .order-table tbody td.price {\n      text-align: right;\n      font-weight: 600;\n      white-space: nowrap;\n    }\n\n    /* ── Totals ── */\n    .totals {\n      margin-top: 6px;\n    }\n\n    .totals-row {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      padding: 7px 0;\n      font-size: 13.5px;\n      color: #666;\n      border-bottom: 1px dashed #f0e8dc;\n    }\n\n    .totals-row:last-of-type {\n      border-bottom: none;\n    }\n\n    .totals-row.grand {\n      margin-top: 10px;\n      padding: 14px 16px;\n      background: #b5451b;\n      border-radius: 10px;\n      color: #fff;\n      font-size: 16px;\n      font-weight: 700;\n      border-bottom: none;\n    }\n\n    .totals-row.grand span:last-child {\n      font-family: 'Playfair Display', serif;\n      font-size: 18px;\n      color: #f9c74f;\n    }\n\n    /* ── Special notes ── */\n    .notes-box {\n      background: #fff8f0;\n      border-left: 4px solid #f9c74f;\n      border-radius: 0 8px 8px 0;\n      padding: 14px 18px;\n      margin-top: 28px;\n      font-size: 13.5px;\n      color: #4a4a4a;\n      line-height: 1.6;\n    }\n\n    .notes-box strong {\n      display: block;\n      font-size: 11px;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #b5451b;\n      margin-bottom: 5px;\n    }\n\n    /* ── Payment status ── */\n    .payment-strip {\n      background: #f5efe6;\n      border-radius: 10px;\n      padding: 16px 20px;\n      margin-top: 24px;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n    }\n\n    .payment-strip .pay-label {\n      font-size: 12px;\n      color: #888;\n      font-weight: 500;\n    }\n\n    .payment-strip .pay-method {\n      font-size: 14px;\n      font-weight: 700;\n      color: #1a1a1a;\n    }\n\n    .pay-status {\n      display: inline-flex;\n      align-items: center;\n      gap: 6px;\n      font-size: 13px;\n      font-weight: 600;\n    }\n\n    .dot {\n      width: 8px; height: 8px;\n      border-radius: 50%;\n      display: inline-block;\n    }\n\n    .dot-pending { background: #f9c74f; }\n    .dot-paid    { background: #4caf50; }\n\n    /* ── Footer ── */\n    .footer {\n      background: #1a1a1a;\n      border-radius: 0 0 16px 16px;\n      padding: 24px 40px;\n      text-align: center;\n    }\n\n    .footer p {\n      color: #888;\n      font-size: 12px;\n      line-height: 1.8;\n    }\n\n    .footer p strong {\n      color: #f9c74f;\n      font-weight: 600;\n    }\n\n    .footer .social {\n      margin-top: 10px;\n      font-size: 12px;\n      color: #666;\n    }\n\n    .footer .social a {\n      color: #f9c74f;\n      text-decoration: none;\n    }\n\n    /* ── Responsive ── */\n    @media (max-width: 480px) {\n      .card { padding: 28px 24px; }\n      .header { padding: 28px 24px 22px; }\n      .alert-bar { padding: 12px 24px; }\n      .footer { padding: 22px 24px; }\n      .header h1 { font-size: 24px; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <!-- Header -->\n    <div class=\"header\">\n      <div class=\"header-badge\">🍲 New Order Received</div>\n      <h1>Mama Tee's <span>Kitchen</span></h1>\n      <p class=\"header-sub\">Order notification — via Teni Voice Assistant</p>\n    </div>\n\n    <!-- Alert bar -->\n    <div class=\"alert-bar\">\n      <span class=\"icon\">⏰</span>\n      <p>\n        Received: <span>{{ $('Data formating').item.json.Date }} at {{ $('Data formating').item.json.Time }}</span>\n        &nbsp;·&nbsp; </span>\n      </p>\n    </div>\n\n    <!-- Main card -->\n    <div class=\"card\">\n\n      <!-- Customer Details -->\n      <p class=\"section-title\">Customer Details</p>\n      <div class=\"info-grid\">\n        <div class=\"info-row\">\n          <span class=\"info-label\">Full Name</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_name }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Phone Number</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_phone }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Order Type</span>\n          <span class=\"info-value\">\n            <!-- Swap badge class based on order type -->\n            <span class=\"badge-type badge-delivery\">🛵 Delivery</span>\n            <!-- <span class=\"badge-type badge-pickup\">🏃 Pickup</span> -->\n          </span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Delivery Address</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.delivery_area }}</span>\n        </div>\n        \n\n      <hr class=\"divider\" />\n\n      <!-- Order Items -->\n      <p class=\"section-title\">Order Summary</p>\n\n{{ $('Code in JavaScript').item.json.order_items }}\n\n      <!-- Totals -->\n      <div class=\"totals\">\n        <div class=\"totals-row\">\n          <span>Subtotal</span>\n          <span>{{ $('Code in JavaScript').item.json.order_total }}</span>\n        </div>\n        <div class=\"totals-row\">\n          <span>Delivery Fee ({{ $('Code in JavaScript').item.json.delivery_area }})</span>\n          <span>{{ $('Code in JavaScript').item.json.delivery_fee }}</span>\n        </div>\n        <div class=\"totals-row grand\">\n          <span>Total Due</span>\n          <span>{{ $('Code in JavaScript').item.json.grand_total }}</span>\n        </div>\n      </div>\n\n      <!-- Special notes -->\n      <div class=\"notes-box\">\n        <strong>📝 Customer Notes</strong>\n        {{ $('Code in JavaScript').item.json.special_requests }}\n      </div>\n\n      <!-- Payment strip -->\n      <div class=\"payment-strip\">\n        <div>\n          <div class=\"pay-label\">Payment Method</div>\n          <div class=\"pay-method\">{{ $('Code in JavaScript').item.json.payment_method }}</div>\n        </div>\n        <div>\n          <!-- Toggle dot class: dot-pending or dot-paid -->\n          <span class=\"pay-status\">\n            <span class=\"dot dot-pending\"></span>\n            Awaiting Payment\n          </span>\n          <!-- Paid version:\n          <span class=\"pay-status\">\n            <span class=\"dot dot-paid\"></span>\n            Payment Confirmed\n          </span> -->\n        </div>\n      </div>\n\n    </div><!-- /card -->\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p>\n        This order was captured by <strong>Teni</strong>, Mama Tee's Kitchen virtual voice assistant.<br />\n        14 Adetokunbo Ademola Crescent, Wuse 2, Abuja &nbsp;·&nbsp; 0812 345 6789\n      </p>\n      <p class=\"social\">\n        Instagram: <a href=\"https://instagram.com/mamateeskitchen\">@mamateeskitchen</a>\n      </p>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        256
+      ],
+      "id": "a64d12bf-a41f-47f3-99bb-18b7443c8f01",
+      "name": "Send order details to email",
+      "webhookId": "e86eeaf3-91cd-4001-b89c-3bb1d46d609c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m2H5CgJRllemH4yc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumber": "={{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}",
+        "message": "=Hello {{ $('Code in JavaScript').item.json.customer_name }},\n\nThank you for calling Mama Tee's Kitchen! 🍲\n\nYour reservation request has been received. Here is your summary:\n\n🪑 Party Size: {{ $('Code in JavaScript').item.json.party_size }} Guests\n📅 Date: {{ $('Code in JavaScript').item.json.reservation_date }}\n🕐 Time: {{ $('Code in JavaScript').item.json.reservation_time }}\n\nA deposit of five thousand naira is required to confirm your booking.\nGTBank — Mama Tee's Kitchen — 0123456789\n\nOnce payment is received, our team will confirm your reservation. 🙏\n\nWe look forward to having you at Mama Tee's Kitchen!"
+      },
+      "type": "n8n-nodes-syncmate.whatsAuto",
+      "typeVersion": 1,
+      "position": [
+        480,
+        832
+      ],
+      "id": "228e937f-778f-4b5d-97e5-0eb7a1bd21e6",
+      "name": "Send reservation details to customer",
+      "credentials": {
+        "assistroTokenApi": {
+          "id": "YKOT5XvBIrNyq7lC",
+          "name": "Assistro Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumber": "2348168290812",
+        "message": "=🪑 NEW RESERVATION — Mama Tee's Kitchen\n\nGuest: {{ $('Code in JavaScript').item.json.customer_name }}\nPhone: {{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}\nParty Size: {{ $('Code in JavaScript').item.json.party_size }} Guests\nDate: {{ $('Code in JavaScript').item.json.reservation_date }}\nTime: {{ $('Code in JavaScript').item.json.reservation_time }}\nSpecial Requests: {{ $('Code in JavaScript').item.json.special_requests }}\n\nCollect the five thousand naira deposit before confirming.\nCheck your email for the full reservation details."
+      },
+      "type": "n8n-nodes-syncmate.whatsAuto",
+      "typeVersion": 1,
+      "position": [
+        480,
+        448
+      ],
+      "id": "d410846d-2a97-4a94-a27c-7cdbc8819f89",
+      "name": "Send reservation details to Mama Tee Staff",
+      "credentials": {
+        "assistroTokenApi": {
+          "id": "YKOT5XvBIrNyq7lC",
+          "name": "Assistro Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumber": "2348168290812",
+        "message": "=🚨 ESCALATION ALERT — Mama Tee's Kitchen\n\nA caller could not be helped by Teni and needs an urgent callback.\n\n👤 Caller: {{ $('Code in JavaScript').item.json.customer_name }}\n📞 Phone: {{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}\n📋 Reason for Call: {{ $('Code in JavaScript').item.json.escalation_reason }}\n\n\n📝 What the Caller Said:\n{{ $('Code in JavaScript').item.json.escalation_reason }}\n\nPlease call back as soon as possible.\nCheck your email for the full escalation details."
+      },
+      "type": "n8n-nodes-syncmate.whatsAuto",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1024
+      ],
+      "id": "41f51eee-402c-42e4-9447-a1fb1691bd91",
+      "name": "Send escalation details to Mama Tee Staff",
+      "credentials": {
+        "assistroTokenApi": {
+          "id": "YKOT5XvBIrNyq7lC",
+          "name": "Assistro Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "phoneNumber": "={{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}",
+        "message": "=Hello {{ $('Code in JavaScript').item.json.customer_name }},\n\nThank you for calling Mama Tee's Kitchen! 🍲\n\nWe are sorry we could not fully assist you during your call. One of our team members will be in touch with you shortly to help resolve your enquiry.\n\nWe appreciate your patience and look forward to serving you. 🙏\n\nMama Tee's Kitchen\n📍 14 Adetokunbo Ademola Crescent, Wuse 2, Abuja\n📞 0812 345 6789\n📸 @mamateeskitchen"
+      },
+      "type": "n8n-nodes-syncmate.whatsAuto",
+      "typeVersion": 1,
+      "position": [
+        480,
+        1408
+      ],
+      "id": "e0313034-d4e0-4cac-9dc9-f6072b3e7cef",
+      "name": "Send escalation details to customer",
+      "credentials": {
+        "assistroTokenApi": {
+          "id": "YKOT5XvBIrNyq7lC",
+          "name": "Assistro Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "akinmadefisayo41@gmail.com",
+        "subject": "Unclassified Call",
+        "message": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>General Enquiry — Mama Tee's Kitchen</title>\n  <style>\n    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap');\n\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n\n    body {\n      background-color: #f5efe6;\n      font-family: 'DM Sans', sans-serif;\n      color: #1a1a1a;\n      padding: 32px 16px;\n    }\n\n    .wrapper {\n      max-width: 600px;\n      margin: 0 auto;\n    }\n\n    /* ── Header ── */\n    .header {\n      background-color: #2c4a7c;\n      border-radius: 16px 16px 0 0;\n      padding: 36px 40px 28px;\n      text-align: center;\n      position: relative;\n      overflow: hidden;\n    }\n\n    .header::before {\n      content: '';\n      position: absolute;\n      top: -40px; right: -40px;\n      width: 180px; height: 180px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.05);\n    }\n\n    .header::after {\n      content: '';\n      position: absolute;\n      bottom: -60px; left: -30px;\n      width: 220px; height: 220px;\n      border-radius: 50%;\n      background: rgba(255,255,255,0.04);\n    }\n\n    .header-badge {\n      display: inline-block;\n      background: #dde8f5;\n      color: #2c4a7c;\n      font-family: 'DM Sans', sans-serif;\n      font-weight: 600;\n      font-size: 11px;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      padding: 5px 14px;\n      border-radius: 20px;\n      margin-bottom: 14px;\n    }\n\n    .header h1 {\n      font-family: 'Playfair Display', serif;\n      font-weight: 900;\n      font-size: 30px;\n      color: #fff;\n      line-height: 1.2;\n      position: relative;\n      z-index: 1;\n    }\n\n    .header h1 span {\n      color: #f9c74f;\n    }\n\n    .header-sub {\n      color: rgba(255,255,255,0.75);\n      font-size: 13.5px;\n      margin-top: 6px;\n      position: relative;\n      z-index: 1;\n    }\n\n    /* ── Alert banner ── */\n    .alert-bar {\n      background: #f9c74f;\n      padding: 12px 40px;\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n\n    .alert-bar .icon { font-size: 18px; }\n\n    .alert-bar p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #1a1a1a;\n    }\n\n    .alert-bar p span {\n      font-weight: 400;\n      color: #4a4a4a;\n    }\n\n    /* ── Info strip ── */\n    .info-strip {\n      background: #eef3fb;\n      border-left: 5px solid #2c4a7c;\n      padding: 14px 24px;\n      display: flex;\n      align-items: center;\n      gap: 12px;\n    }\n\n    .info-strip .i-icon {\n      font-size: 20px;\n      flex-shrink: 0;\n    }\n\n    .info-strip p {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: #2c4a7c;\n      line-height: 1.5;\n    }\n\n    .info-strip p span {\n      font-weight: 400;\n      color: #3a5080;\n    }\n\n    /* ── Body card ── */\n    .card {\n      background: #ffffff;\n      padding: 36px 40px;\n    }\n\n    /* ── Section title ── */\n    .section-title {\n      font-size: 10.5px;\n      font-weight: 600;\n      letter-spacing: 2.5px;\n      text-transform: uppercase;\n      color: #2c4a7c;\n      margin-bottom: 12px;\n    }\n\n    /* ── Info grid ── */\n    .info-grid {\n      display: table;\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 28px;\n    }\n\n    .info-row { display: table-row; }\n\n    .info-label {\n      display: table-cell;\n      font-size: 13px;\n      color: #888;\n      font-weight: 500;\n      padding: 7px 0;\n      width: 38%;\n      vertical-align: top;\n    }\n\n    .info-value {\n      display: table-cell;\n      font-size: 14px;\n      font-weight: 600;\n      color: #1a1a1a;\n      padding: 7px 0;\n      vertical-align: top;\n    }\n\n    /* ── Call type badge ── */\n    .call-badge {\n      display: inline-block;\n      background: #eef3fb;\n      color: #2c4a7c;\n      font-size: 12px;\n      font-weight: 600;\n      padding: 4px 12px;\n      border-radius: 20px;\n      border: 1px solid #c5d5ee;\n    }\n\n    .divider {\n      border: none;\n      border-top: 1.5px solid #f0e8dc;\n      margin: 24px 0;\n    }\n\n    /* ── Enquiry card ── */\n    .enquiry-card {\n      background: #f7f9fd;\n      border: 1.5px solid #c5d5ee;\n      border-radius: 12px;\n      padding: 22px 24px;\n      margin-bottom: 28px;\n    }\n\n    .enquiry-card .e-label {\n      font-size: 10px;\n      font-weight: 600;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #2c4a7c;\n      margin-bottom: 10px;\n    }\n\n    .enquiry-card .e-text {\n      font-size: 14.5px;\n      color: #2a2a2a;\n      line-height: 1.7;\n      font-style: italic;\n    }\n\n    .enquiry-card .e-text::before {\n      content: '\"';\n      font-family: 'Playfair Display', serif;\n      font-size: 28px;\n      color: #c5d5ee;\n      line-height: 0;\n      vertical-align: -10px;\n      margin-right: 4px;\n    }\n\n    .enquiry-card .e-text::after {\n      content: '\"';\n      font-family: 'Playfair Display', serif;\n      font-size: 28px;\n      color: #c5d5ee;\n      line-height: 0;\n      vertical-align: -10px;\n      margin-left: 4px;\n    }\n\n    /* ── Call summary ── */\n    .summary-box {\n      background: #f9f9f9;\n      border-radius: 10px;\n      padding: 18px 22px;\n      margin-bottom: 4px;\n      font-size: 13.5px;\n      color: #4a4a4a;\n      line-height: 1.75;\n    }\n\n    .summary-box .s-label {\n      font-size: 10px;\n      font-weight: 600;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #888;\n      margin-bottom: 8px;\n    }\n\n    /* ── Callback strip ── */\n    .callback-strip {\n      background: #2c4a7c;\n      border-radius: 10px;\n      padding: 18px 22px;\n      margin-top: 24px;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      gap: 12px;\n    }\n\n    .callback-strip .cb-left .cb-label {\n      font-size: 11px;\n      color: rgba(255,255,255,0.6);\n      font-weight: 500;\n      margin-bottom: 4px;\n    }\n\n    .callback-strip .cb-left .cb-number {\n      font-family: 'Playfair Display', serif;\n      font-size: 20px;\n      font-weight: 700;\n      color: #f9c74f;\n      letter-spacing: 1px;\n    }\n\n    .callback-strip .cb-right {\n      font-size: 12px;\n      font-weight: 600;\n      color: rgba(255,255,255,0.85);\n      text-align: right;\n      line-height: 1.6;\n    }\n\n    /* ── Action box ── */\n    .action-box {\n      margin-top: 24px;\n      border: 1.5px dashed #c5d5ee;\n      border-radius: 10px;\n      padding: 16px 20px;\n      font-size: 13px;\n      color: #4a4a4a;\n      line-height: 1.7;\n    }\n\n    .action-box strong {\n      display: block;\n      font-size: 10.5px;\n      letter-spacing: 2px;\n      text-transform: uppercase;\n      color: #2c4a7c;\n      margin-bottom: 8px;\n    }\n\n    .action-box ul {\n      padding-left: 18px;\n    }\n\n    .action-box ul li {\n      margin-bottom: 4px;\n    }\n\n    /* ── Footer ── */\n    .footer {\n      background: #1a1a1a;\n      border-radius: 0 0 16px 16px;\n      padding: 24px 40px;\n      text-align: center;\n    }\n\n    .footer p {\n      color: #888;\n      font-size: 12px;\n      line-height: 1.8;\n    }\n\n    .footer p strong {\n      color: #f9c74f;\n      font-weight: 600;\n    }\n\n    .footer .social {\n      margin-top: 10px;\n      font-size: 12px;\n      color: #666;\n    }\n\n    .footer .social a {\n      color: #f9c74f;\n      text-decoration: none;\n    }\n\n    /* ── Responsive ── */\n    @media (max-width: 480px) {\n      .card { padding: 28px 24px; }\n      .header { padding: 28px 24px 22px; }\n      .alert-bar { padding: 12px 24px; }\n      .footer { padding: 22px 24px; }\n      .header h1 { font-size: 24px; }\n      .callback-strip { flex-direction: column; align-items: flex-start; }\n      .callback-strip .cb-right { text-align: left; }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"wrapper\">\n\n    <!-- Header -->\n    <div class=\"header\">\n      <div class=\"header-badge\">📞 General Enquiry</div>\n      <h1>Mama Tee's <span>Kitchen</span></h1>\n      <p class=\"header-sub\">Enquiry notification — via Teni Voice Assistant</p>\n    </div>\n\n    <!-- Alert bar -->\n    <div class=\"alert-bar\">\n      <span class=\"icon\">⏰</span>\n      <p>\n        Received: <span>{{ $('Data formating').item.json.Date }} at {{ $('Data formating').item.json.Time }}</span>\n      </p>\n    </div>\n\n    <!-- Info strip -->\n    <div class=\"info-strip\">\n      <span class=\"i-icon\">💬</span>\n      <p>\n        A caller reached Teni with an enquiry that does not require immediate action. <span>Review and respond at your earliest convenience.</span>\n      </p>\n    </div>\n\n    <!-- Main card -->\n    <div class=\"card\">\n\n      <!-- Caller Details -->\n      <p class=\"section-title\">Caller Details</p>\n      <div class=\"info-grid\">\n        <div class=\"info-row\">\n          <span class=\"info-label\">Full Name</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_name }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Phone Number</span>\n          <span class=\"info-value\">{{ $('Code in JavaScript').item.json.customer_phone }}</span>\n        </div>\n        <div class=\"info-row\">\n          <span class=\"info-label\">Call Type</span>\n          <span class=\"info-value\">\n            <span class=\"call-badge\">💬 {{ $('Code in JavaScript').item.json.record_type }}</span>\n          </span>\n        </div>\n      </div>\n\n      <hr class=\"divider\" />\n\n      <!-- Enquiry Details -->\n      <p class=\"section-title\">What the Caller Asked</p>\n      <div class=\"enquiry-card\">\n        <div class=\"e-label\">📞 Caller's Enquiry</div>\n        <p class=\"e-text\">{{ $('Code in JavaScript').item.json.caller_request }}</p>\n      </div>\n\n      <!-- Call Summary -->\n      <p class=\"section-title\">Call Summary</p>\n      <div class=\"summary-box\">\n        <div class=\"s-label\">🤖 Teni's Summary</div>\n        {{ $('Code in JavaScript').item.json.agent_summary }}\n      </div>\n\n      <!-- Callback strip -->\n      <div class=\"callback-strip\">\n        <div class=\"cb-left\">\n          <div class=\"cb-label\">Caller's number</div>\n          <div class=\"cb-number\">{{ $('Code in JavaScript').item.json.customer_phone }}</div>\n        </div>\n        <div class=\"cb-right\">\n          Follow up with this caller<br />\n          if a response is needed.\n        </div>\n      </div>\n\n      <!-- Action checklist -->\n      <div class=\"action-box\">\n        <strong>✅ Suggested Action</strong>\n        <ul>\n          <li>Review Teni's call summary above</li>\n          <li>Call back {{ $('Code in JavaScript').item.json.customer_name }} if a follow-up is needed</li>\n          <li>If this is a catering enquiry, discuss menu and pricing and give at least 5 days notice</li>\n          <li>If no follow-up is needed, no action is required</li>\n        </ul>\n      </div>\n\n    </div><!-- /card -->\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p>\n        This enquiry was captured by <strong>Teni</strong>, Mama Tee's Kitchen virtual voice assistant.<br />\n        14 Adetokunbo Ademola Crescent, Wuse 2, Abuja &nbsp;·&nbsp; 0812 345 6789\n      </p>\n      <p class=\"social\">\n        Instagram: <a href=\"https://instagram.com/mamateeskitchen\">@mamateeskitchen</a>\n      </p>\n    </div>\n\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        832
+      ],
+      "id": "6219ec45-1f16-43e0-b7b1-0f439f312ab8",
+      "name": "Send a message",
+      "webhookId": "2aebf36d-ad9d-473c-954a-f1ecbcb7b04e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m2H5CgJRllemH4yc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=💬 GENERAL ENQUIRY — Mama Tee's Kitchen\n\n👤 Caller: {{ $('Code in JavaScript').item.json.customer_name }}\n📞 Phone: {{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}\n📋 Call Type: {{ $('Code in JavaScript').item.json.record_type }}\n\n📝 Enquiry:\n{{ $('Code in JavaScript').item.json.caller_request }}\n\n🤖 Teni's Summary:\n{{ $('Code in JavaScript').item.json.agent_summary }}\n\nCheck your email for full details.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        1024
+      ],
+      "id": "1b8dadaa-1e83-4987-a965-1e6f33c50da9",
+      "name": "Send a text message",
+      "webhookId": "55d4c029-46a1-4bda-a509-cf34d7dd3827",
+      "credentials": {
+        "telegramApi": {
+          "id": "esFVgQ2nEO8mJilb",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=💬 GENERAL ENQUIRY — Mama Tee's Kitchen\n\n👤 Caller: {{ $('Code in JavaScript').item.json.customer_name }}\n📞 Phone: {{ '234' + $('Code in JavaScript').item.json.customer_phone.slice(1) }}\n📋 Call Type: {{ $('Code in JavaScript').item.json.record_type }}\n\n📝 Enquiry:\n{{ $('Code in JavaScript').item.json.caller_request }}\n\n🤖 Teni's Summary:\n{{ $('Code in JavaScript').item.json.agent_summary }}\n\nCheck your email for full details.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        -128
+      ],
+      "id": "dd85bdbc-8029-4b9d-9cb6-cb03a39d9b68",
+      "name": "Send a text message1",
+      "webhookId": "55d4c029-46a1-4bda-a509-cf34d7dd3827",
+      "credentials": {
+        "telegramApi": {
+          "id": "esFVgQ2nEO8mJilb",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=Hello {{ $('Code in JavaScript').item.json.customer_name }},\n\nThank you for calling Mama Tee's Kitchen! 🍲\n\nYour order has been received. Here is your summary:\n\n📦 Order Type: {{ $('Code in JavaScript').item.json.order_type }}\n{{ $('Code in JavaScript').item.json.order_type === 'pickup' ? '' : '🛵 Delivery Area: ' + $('Code in JavaScript').item.json.delivery_area + '\\n' }}\n💰 Total: {{ $('Code in JavaScript').item.json.grand_total }}\n💳 Payment: {{ $('Code in JavaScript').item.json.payment_method }}\n\n{{ $('Code in JavaScript').item.json.order_type === 'Pickup' ? 'Please come to us at:\\n📍 14 Adetokunbo Ademola Crescent, Wuse 2, Abuja' : 'Please make payment before dispatch.\\nGTBank — Mama Tee\\'s Kitchen — 0123456789\\n\\nWe will be with you in 30–60 minutes.' }} 🙏\n\nWe look forward to serving you at Mama Tee's Kitchen!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        80
+      ],
+      "id": "f2b4974f-2a82-491f-be6e-62e572c0af03",
+      "name": "Send a text message2",
+      "webhookId": "55d4c029-46a1-4bda-a509-cf34d7dd3827",
+      "credentials": {
+        "telegramApi": {
+          "id": "esFVgQ2nEO8mJilb",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "029f5223-cffe-4428-b039-2e1ee1313280",
+              "leftValue": "={{ $json.body.message.type }}",
+              "rightValue": "end-of-call-report",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -992,
+        832
+      ],
+      "id": "3423b889-adaa-47d2-8a3e-c4e72ff23622",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Data formating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Order Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reservation Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalation Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send order details to email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data formating": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservation Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send reservation details to Mama Tee Staff",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send reservation details to email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send reservation details to customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalation Sheet": {
+      "main": [
+        [
+          {
+            "node": "Send escalation details to email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send escalation details to Mama Tee Staff",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send escalation details to customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0ac4d62a-31c3-474f-a969-3b3df617ef70",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a84615fe87327cb1efd3437a2bb335b68881750a8fd7ad292b4760218c6eb7a"
+  },
+  "id": "bsWjZ6bGsD17wzdl",
+  "tags": []
+}
