@@ -1,0 +1,809 @@
+{
+  "name": "email trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ebc996a4-a0d5-4610-98eb-03e3bb31f294",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "HR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0d98acf8-598f-44d5-b051-b23a11c2da2c",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "Sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "67adafe4-8022-4d37-9f1d-9867457bbcce",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "Customer Service",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "dde7a770-5bf1-421e-8a13-16a60f86052e",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "Operations",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ac08b9fc-7de8-42b0-a423-0341e478b473",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "Finance",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8f043a90-b7c3-4822-8039-d2d1dccbe61b",
+                    "leftValue": "={{ $('Edit Fields').item.json.category }}",
+                    "rightValue": "AI and Automation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        416
+      ],
+      "id": "d48a3637-bd8e-416a-a969-d0842487f932",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email Subject:{{ $json.Subject }}\nEmail Body:{{ $json.body }}\n\n{\n  \"category\": \"string\",\n  \"summary\": \"string\"\n}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You analyze emails and categorize them into one of the following departments:\n\n- Sales\n- Finance\n- HR\n- Customer Service\n- Operations\n- AI and Automation\n\nReturn ONLY valid JSON in this exact format:\n\n{\n  \"category\": \"AI and Automation\",\n  \"summary\": \"Short professional summary of the email (2–3 sentences)\"\n}\n\nRules:\n- Do NOT include explanations\n- Do NOT include extra text\n- Do NOT use markdown\n- Output must be valid JSON\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -800,
+        480
+      ],
+      "id": "420ff9c1-900c-47b0-971a-2ab9df120b57",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -800,
+        704
+      ],
+      "id": "c162a8ab-ecf2-4517-99d0-5b062f1f3b1f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Wmdvxk4edbbzeS8D",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item, index) => {\n\n  // Get email body safely (textPlain first, fallback to textHtml)\n  const emailBody = (item.json.textPlain || item.json.textHtml || \"\").toString();\n  const emailText = emailBody.toLowerCase();\n\n  let category = \"OTHER\";\n\n  if (emailText.includes(\"sale\") || emailText.includes(\"revenue\")) {\n    category = \"SALES\";\n  } \n  else if (emailText.includes(\"hr\") || emailText.includes(\"payroll\")) {\n    category = \"HR\";\n  } \n  else if (emailText.includes(\"ai and automation\") || emailText.includes(\"campaign\")) {\n    category = \"AI AND AUTOMATION\";\n  } \n  else if (emailText.includes(\"customer\") || emailText.includes(\"support\")) {\n    category = \"CUSTOMER SERVICE\";\n  }\n\n  return {\n    json: {\n      ...item.json,     // keep EVERYTHING from the original email\n      body: emailBody,  // explicitly keep body\n      category: category\n    },\n    pairedItem: index\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1168,
+        480
+      ],
+      "id": "e7de7ba2-e60d-47fb-acb5-e5d6aae9b616",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": {\n      \"type\": \"string\"\n    },\n    \"summary\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\"category\", \"summary\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        688
+      ],
+      "id": "df3a8f07-34ea-43d1-b05b-b2e43c8938e7",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dd570b5e-3d3e-4d63-8678-b62308b24bde",
+              "name": "=category",
+              "value": "={{$json.output.category}}",
+              "type": "string"
+            },
+            {
+              "id": "03039ebb-acd4-491c-9318-e9df07a3ba22",
+              "name": "=summary",
+              "value": "={{$json.output.summary}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        480
+      ],
+      "id": "4d826d97-5ac3-4c1e-b835-d0fc65851097",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Sales Department\n\n👤 From:{{ $('Gmail Trigger').item.json.From }} \n📝 Subject: {{ $('Append row in sheet').item.json.Subject }}\n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Sales",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        304
+      ],
+      "id": "c5c754f0-08c2-4163-8773-a5ce0bd47e8b",
+      "name": "Sales ",
+      "webhookId": "51fbae03-0553-437c-a0ef-0972a784c7b1",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Human Resources\n\n👤 From: {{ $('Append row in sheet').item.json.From }}\n📝 Subject: {{ $('Edit Fields').item.json.category }}\n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Human Resources\n📌 Could relate to recruitment, staff matters, or HR policy.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        112
+      ],
+      "id": "588841f1-8396-4847-be47-464f193e805b",
+      "name": "Human Resources",
+      "webhookId": "80e496f8-ca56-430e-862e-f3dbdcdf6aee",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Customer Service\n\n👤 From: {{ $('Gmail Trigger').item.json.From }}\n📝 Subject:{{ $('Edit Fields').item.json.category }} \n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Customer Service\n⚠️ Please respond promptly — this may be a support request.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        432
+      ],
+      "id": "29ef6bd0-53bf-4394-b453-b8c695f40fa3",
+      "name": "Customer Service",
+      "webhookId": "ae91d92e-7bf5-4ef1-b942-0108fc2fa079",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Operations Department\n\n👤 From:{{ $('Gmail Trigger').item.json.From }} \n📝 Subject:{{ $('Edit Fields').item.json.category }} \n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Operations\n⚙️ May relate to logistics, processes, or internal systems.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        544
+      ],
+      "id": "07993a74-acb7-4a70-9aad-a0a5268d6f87",
+      "name": "Operations",
+      "webhookId": "cbd503a7-bff0-456b-9cfc-eb2c0156bf58",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Unclassified\n\n👤 From: {{ $('Append row in sheet').item.json.From }}\n📝 Subject: {{ $('Append row in sheet').item.json.Subject }}\n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Other\n🔍 This email did not match any known department. Please review manually.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        944
+      ],
+      "id": "404e1369-9ed6-43fe-a0e1-e5c7db83ed52",
+      "name": "Other",
+      "webhookId": "cf5c8d31-7dd0-456d-94b8-8cddb8739777",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=📧 New Email — Finance Department\n\n👤 From: {{ $('Gmail Trigger').item.json.From }}\n📝 Subject: {{ $('Append row in sheet').item.json.Subject }}\n🕒 Time: {{ $now.toFormat('dd MMM yyyy, HH:mm') }}\n\n💬 Preview:\n{{ $('Edit Fields').item.json.summary }}\n\n🏷️ Category: Finance\n💰 May involve invoices, payments, or financial queries.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        704
+      ],
+      "id": "9da1dbb5-4f4f-49d6-be08-8ec62b60bb4d",
+      "name": "Finance",
+      "webhookId": "75ae60cc-4216-40f2-a3f9-07cbe00bbb69",
+      "credentials": {
+        "telegramApi": {
+          "id": "qxWSz8ZCeG7h3NY6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1504,
+        480
+      ],
+      "id": "ba09eda8-b42c-465b-9fa1-21896af0cf44",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "m2H5CgJRllemH4yc",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1L5ux-meaohal4zCnkSGMPdxxYN6mmDeFMCARoKDwdVM",
+          "mode": "list",
+          "cachedResultName": "Gmail Trigger ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1L5ux-meaohal4zCnkSGMPdxxYN6mmDeFMCARoKDwdVM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1L5ux-meaohal4zCnkSGMPdxxYN6mmDeFMCARoKDwdVM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Department": "={{ $json.category }}",
+            "Preview": "={{ $json.summary }}",
+            "Subject": "={{ $('Gmail Trigger').item.json.Subject }}",
+            "From": "={{ $('Gmail Trigger').item.json.From }}",
+            "Timestamp": "={{ $now.toFormat('dd MMM yyyy, HH:mm') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preview",
+              "displayName": "Preview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -240,
+        480
+      ],
+      "id": "ace584d6-0aa0-4f78-b43b-1149934024a3",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YElJf9hbNGuevu2d",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Department: {{ $('Edit Fields').first().json.department }}\nSender Name: {{ $('Gmail Trigger').first().json.from.value[0].name }}\nSubject: {{ $('Gmail Trigger').first().json.subject }}\nEmail Body: {{ $('Gmail Trigger').first().json.text.slice(0, 300) }}\n\nWrite a professional auto-reply email.",
+        "options": {
+          "systemMessage": "You are a professional business email assistant.\n\nBased on the department category and the original \nemail content, write a polite and professional \nauto-reply email to the sender.\n\nTailor the tone and content to match the department:\n- Sales: warm and enthusiastic\n- Customer Service: empathetic and reassuring\n- Human Resources: formal and confidential\n- Finance: professional, mention 2 business days\n- Operations: professional, mention 1-2 business days\n- Other: neutral and helpful\n\nKeep the reply under 100 words."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1360,
+        320
+      ],
+      "id": "56a257a3-92e9-4532-8fa3-b2f3bcb6caed",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1056,
+        304
+      ],
+      "id": "5fe963a9-6234-4618-9b6c-caa715c35d76",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        528
+      ],
+      "id": "f79d45f7-b211-4b56-8f54-e51c20c08a88",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Wmdvxk4edbbzeS8D",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Human Resources",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sales ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Customer Service",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Operations",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Resources": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sales ": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Customer Service": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Operations": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Finance": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Other": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "845a1880-00d9-4c29-a025-5f7f426e1f6a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a84615fe87327cb1efd3437a2bb335b68881750a8fd7ad292b4760218c6eb7a"
+  },
+  "id": "F3Ctu4uCknORvCdl",
+  "tags": []
+}
