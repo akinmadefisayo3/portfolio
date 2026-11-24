@@ -1,0 +1,303 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "6d8d21e0-a307-4d5f-822f-ce2b4e5ef89c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a56bb1d7-1674-4560-81c4-26e39d265b1e",
+      "name": "Webhook",
+      "webhookId": "6d8d21e0-a307-4d5f-822f-ce2b4e5ef89c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json;\n\nconst name = body.fields?.[0]?.value;\nconst email = body.fields?.[1]?.value;\nconst plan = body.fields?.[2]?.value;\n\nconst now = new Date();\nlet days = 30;\nif (plan === 'Weekly') days = 7;\nif (plan === 'Monthly') days = 30;\nif (plan === 'Yearly') days = 365;\n\nconst expiry = new Date(now);\nexpiry.setDate(expiry.getDate() + days);\n\nconst startDate = now.toISOString().split('T')[0];\nconst expiryDate = expiry.toISOString().split('T')[0];\n\nreturn [{\n  json: {\n    name: name,\n    email: email,\n    plan: plan,\n    startDate: startDate,\n    expiryDate: expiryDate\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3c79efe4-52ab-41be-bf2b-7a8e4a53a946",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appXZ7MtiS4Vziiy0",
+          "mode": "list",
+          "cachedResultName": "Untitled Base",
+          "cachedResultUrl": "https://airtable.com/appXZ7MtiS4Vziiy0"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSIcrqfca7dl1AF",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appXZ7MtiS4Vziiy0/tblSIcrqfca7dl1AF"
+        },
+        "filterByFormula": "={Email} = \"{{ $json.email }}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5b782ea9-9571-4b65-b6cc-c9a3d929f12c",
+      "name": "Search records",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Md1E0oqsBrX7t27p",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appXZ7MtiS4Vziiy0",
+          "mode": "list",
+          "cachedResultName": "Untitled Base",
+          "cachedResultUrl": "https://airtable.com/appXZ7MtiS4Vziiy0"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSIcrqfca7dl1AF",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appXZ7MtiS4Vziiy0/tblSIcrqfca7dl1AF"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Subscription Plan": "Monthly",
+            "Status": "Active",
+            "Start Date": "={{ $('Code in JavaScript').item.json.startDate }}",
+            "Expiry Date": "={{ $('Code in JavaScript').item.json.expiryDate }}",
+            "id": "={{ $('Search records').first().json.id }}",
+            "Full Name": "Akinmade Fisayo",
+            "Email": "akinmadefisayo41@gmail.com"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subscription Plan",
+              "displayName": "Subscription Plan",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yearly",
+                  "value": "Yearly"
+                },
+                {
+                  "name": "Weekly",
+                  "value": "Weekly"
+                },
+                {
+                  "name": "Monthly",
+                  "value": "Monthly"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Active",
+                  "value": "Active"
+                },
+                {
+                  "name": "Expired",
+                  "value": "Expired"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Start Date",
+              "displayName": "Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Expiry Date",
+              "displayName": "Expiry Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "36101aa2-eff1-4780-ae4a-89e92ae4fa72",
+      "name": "Update record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Md1E0oqsBrX7t27p",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6453963214",
+        "text": "=🎉 Subscription Renewed!\n\n👤 Name: {{ $('Update record').first().json.fields['Full Name'] }}\n📧 Email: {{ $('Update record').first().json.fields.Email }}\n📦 Plan: {{ $('Update record').first().json.fields['Subscription Plan'] }}\n✅ Status: {{ $('Update record').first().json.fields.Status }}\n📅 Start Date: {{ $('Update record').first().json.fields['Start Date'] }}\n📅 Expiry Date: {{ $('Update record').first().json.fields['Expiry Date'] }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "6c5f2c5a-4d93-4a4b-9c04-7195f98a22d8",
+      "name": "Send a text message",
+      "webhookId": "f7954541-cfe9-487d-b100-493fddc6c787",
+      "credentials": {
+        "telegramApi": {
+          "id": "NqVWvFiOSYwuREaE",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update record": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1e71f16e-c7a0-4266-8001-d1c915c82349",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1f8e5e1309fcb8c433efb5e35d4db09e01bb4d7cdc4654e3914f60aef10d86d8"
+  },
+  "id": "W4QTFpfGlw2Ivfub",
+  "tags": []
+}
